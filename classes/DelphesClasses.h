@@ -370,6 +370,8 @@ public:
   UInt_t FlavorPhys; // jet flavor
 
   UInt_t BTag; // 0 or 1 for a jet that has been tagged as containing a heavy quark
+  UInt_t BTagUp; // 0 or 1 for a jet that has been tagged as containing a heavy quark / Up variation
+  UInt_t BTagDn; // 0 or 1 for a jet that has been tagged as containing a heavy quark / Down variation
   UInt_t BTagAlgo; // 0 or 1 for a jet that has been tagged as containing a heavy quark
   UInt_t BTagPhys; // 0 or 1 for a jet that has been tagged as containing a heavy quark
 
@@ -665,6 +667,8 @@ public:
   UInt_t FlavorPhys;
 
   UInt_t BTag;
+  UInt_t BTagUp;
+  UInt_t BTagDn;
   UInt_t BTagAlgo;
   UInt_t BTagPhys;
 

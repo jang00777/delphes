@@ -125,6 +125,9 @@ void BTagging::Process()
   map<Int_t, DelphesFormula *>::iterator itEfficiencyMap;
   DelphesFormula *formula;
 
+  // Variation factor of an efficiency
+  Double_t uncUp, uncDn;
+
   // loop over all input jets
   fItJetInputArray->Reset();
   while((jet = static_cast<Candidate *>(fItJetInputArray->Next())))
@@ -135,6 +138,18 @@ void BTagging::Process()
     pt = jetMomentum.Pt();
     e = jetMomentum.E();
 
+    Double_t prob = gRandom->Uniform();
+
+    // vary the relative b-tagging efficiency by 2.5% and 10% for b and non-b jets, respectively,
+    // which are the largest relative changes across the full pT range shown in the CMS b-tagging study arxiv:1712.07158
+    if (jet->Flavor == 5) {
+      uncUp = 1.025;
+      uncDn = 0.975;
+    } else {
+      uncUp = 1.1;
+      uncDn = 0.9;
+    }
+
     // find an efficiency formula
     itEfficiencyMap = fEfficiencyMap.find(jet->Flavor);
     if(itEfficiencyMap == fEfficiencyMap.end())
@@ -144,7 +159,9 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTag |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTag |= (prob <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTagUp |= (prob <= (uncUp*formula->Eval(pt, eta, phi, e))) << fBitNumber;
+    jet->BTagDn |= (prob <= (uncDn*formula->Eval(pt, eta, phi, e))) << fBitNumber;
 
     // find an efficiency formula for algo flavor definition
     itEfficiencyMap = fEfficiencyMap.find(jet->FlavorAlgo);
@@ -155,7 +172,7 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTagAlgo |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTagAlgo |= (prob <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
 
     // find an efficiency formula for phys flavor definition
     itEfficiencyMap = fEfficiencyMap.find(jet->FlavorPhys);
@@ -166,7 +183,7 @@ void BTagging::Process()
     formula = itEfficiencyMap->second;
 
     // apply an efficiency formula
-    jet->BTagPhys |= (gRandom->Uniform() <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
+    jet->BTagPhys |= (prob <= formula->Eval(pt, eta, phi, e)) << fBitNumber;
   }
 }
 
