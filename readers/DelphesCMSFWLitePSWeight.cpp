@@ -56,6 +56,7 @@
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 #include "FWCore/FWLite/interface/FWLiteEnabler.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/WeightsInfo.h"
@@ -73,10 +74,12 @@ void ConvertInput(fwlite::Event &event,
                   TObjArray *allParticleOutputArray,
                   TObjArray *stableParticleOutputArray,
                   TObjArray *partonOutputArray,
-                  Bool_t firstEvent)
+                  Bool_t firstEvent,
+                  std::vector<size_t> &vectorPSWeightsIndex)
 {
 
   fwlite::Handle<GenEventInfoProduct> handleGenEventInfo;
+  fwlite::Handle<GenLumiInfoHeader> handleGenLumiInfo;
   fwlite::Handle<LHEEventProduct> handleLHEEvent;
   fwlite::Handle<vector<reco::GenParticle> > handleParticle;
   fwlite::Handle<vector<pat::PackedGenParticle> > handlePackedParticle;
@@ -88,6 +91,9 @@ void ConvertInput(fwlite::Event &event,
   vector<const reco::Candidate *>::iterator itCandidate;
 
   handleGenEventInfo.getByLabel(event, "generator");
+
+  const fwlite::LuminosityBlock& lumi = event.getLuminosityBlock();
+  handleGenLumiInfo.getByLabel(lumi, "generator");
 
   if(!((handleLHEEvent.getBranchNameFor(event, "source")).empty()))
   {
@@ -172,6 +178,31 @@ void ConvertInput(fwlite::Event &event,
   const std::vector<double>& ps_weight_vec = handleGenEventInfo->weights();
   const size_t ps_weight_vec_size = ps_weight_vec.size();
 
+  // Indices for ISR/FSR up/down depends on madgraph version, so extract indices of ps weights by checking LuminosityBlocks/GenLumiInfoHeader_generator__GEN.obj.weightNames()
+  // We DON'T need to try extracting proper ps weight indices every event and derive only if there's header info.
+  if (firstEvent && handleGenLumiInfo.isValid()) {
+
+    const vector<std::string>& vectorWeightsName = handleGenLumiInfo->weightNames();
+    int idx_isr_up = -1, idx_isr_down = -1, idx_fsr_up = -1, idx_fsr_down = -1;
+
+    for (std::size_t idx=0; idx < ps_weight_vec_size; idx++) {
+      const auto& weightName = vectorWeightsName[idx];
+
+      if (weightName.find("isr:murfac=2.0") != std::string::npos) idx_isr_up = idx;
+      if (weightName.find("isr:murfac=0.5") != std::string::npos) idx_isr_down = idx;
+      if (weightName.find("fsr:murfac=2.0") != std::string::npos) idx_fsr_up = idx;
+      if (weightName.find("fsr:murfac=0.5") != std::string::npos) idx_fsr_down = idx;
+    }
+
+    // Order of weights - isr up and down then fsr up and down
+    if (idx_isr_up != -1 && idx_isr_down != -1 && idx_fsr_up != -1 && idx_fsr_down != -1) {
+      vectorPSWeightsIndex.push_back(idx_isr_up);
+      vectorPSWeightsIndex.push_back(idx_isr_down);
+      vectorPSWeightsIndex.push_back(idx_fsr_up);
+      vectorPSWeightsIndex.push_back(idx_fsr_down);
+    }
+  }
+
   const size_t vector_size = (ps_weight_vec_size == 14) or (ps_weight_vec_size == 46) ? 4 : 1;
   if (vector_size == 1) {
     // dummy PS weight
@@ -181,18 +212,21 @@ void ConvertInput(fwlite::Event &event,
   } else if (vector_size == 4) {
     const double nominal = ps_weight_vec.at(1);
 
-    for (std::size_t idx = 6; idx < 10; idx++) {
-      ps_weight = static_cast<Weight *>(branchPSWeight->NewEntry());
-      ps_weight->Weight = ps_weight_vec.at(idx) / nominal;
+    if (vectorPSWeightsIndex.size() == 4) {
+      for (const std::size_t& idx : vectorPSWeightsIndex) {
+        ps_weight = static_cast<Weight *>(branchPSWeight->NewEntry());
+        ps_weight->Weight = ps_weight_vec.at(idx) / nominal;
+      }
+    } else {
+      for (std::size_t idx = 6; idx < 10; idx++) { // Default setup 
+        ps_weight = static_cast<Weight *>(branchPSWeight->NewEntry());
+        ps_weight->Weight = ps_weight_vec.at(idx) / nominal;
+      }
     }
 
   } else {
     // not implemented
   }
-
-
-
-
 
   pdg = TDatabasePDG::Instance();
 
@@ -351,6 +385,8 @@ int main(int argc, char *argv[])
   Long64_t eventCounter, numberOfEvents;
   Bool_t firstEvent = kTRUE;
 
+  std::vector<size_t> vectorPSWeightsIndex;
+
   if(argc < 4)
   {
     cout << " Usage: " << appName << " config_file"
@@ -431,7 +467,7 @@ int main(int argc, char *argv[])
       for(event.toBegin(); !event.atEnd() && !interrupted; ++event)
       {
         ConvertInput(event, eventCounter, branchEvent, branchWeight, branchPSWeight, factory,
-                     allParticleOutputArray, stableParticleOutputArray, partonOutputArray, firstEvent);
+                     allParticleOutputArray, stableParticleOutputArray, partonOutputArray, firstEvent, vectorPSWeightsIndex);
         modularDelphes->ProcessTask();
 
         firstEvent = kFALSE;
