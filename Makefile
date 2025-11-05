@@ -328,6 +328,27 @@ EXECUTABLE_OBJ +=  \
 
 endif
 
+ifeq ($(HAS_CMSSW),true)
+DelphesCMSFWLitePSWeightNoVtxSmearing$(ExeSuf): \
+        tmp/readers/DelphesCMSFWLitePSWeightNoVtxSmearing.$(ObjSuf)
+
+tmp/readers/DelphesCMSFWLitePSWeightNoVtxSmearing.$(ObjSuf): \
+        readers/DelphesCMSFWLitePSWeightNoVtxSmearing.cpp \
+        classes/DelphesClasses.h \
+        classes/DelphesFactory.h \
+        classes/DelphesStream.h \
+        modules/Delphes.h \
+        external/ExRootAnalysis/ExRootProgressBar.h \
+        external/ExRootAnalysis/ExRootTreeBranch.h \
+        external/ExRootAnalysis/ExRootTreeWriter.h
+EXECUTABLE +=  \
+        DelphesCMSFWLitePSWeightNoVtxSmearing$(ExeSuf)
+
+EXECUTABLE_OBJ +=  \
+        tmp/readers/DelphesCMSFWLitePSWeightNoVtxSmearing.$(ObjSuf)
+
+endif
+
 ifeq ($(HAS_PROMC),true)
 DelphesProMC$(ExeSuf): \
 	tmp/readers/DelphesProMC.$(ObjSuf)

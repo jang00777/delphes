@@ -295,6 +295,8 @@ executableDeps {readers/DelphesHepMC2.cpp} {readers/DelphesHepMC3.cpp} {readers/
 
 puts {ifeq ($(HAS_CMSSW),true)}
 executableDeps {readers/DelphesCMSFWLite.cpp}
+executableDeps {readers/DelphesCMSFWLitePSWeight.cpp}
+executableDeps {readers/DelphesCMSFWLitePSWeightNoVtxSmearing.cpp}
 puts {endif}
 puts {}
 
