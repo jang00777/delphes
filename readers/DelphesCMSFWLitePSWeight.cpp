@@ -183,23 +183,25 @@ void ConvertInput(fwlite::Event &event,
   if (firstEvent && handleGenLumiInfo.isValid()) {
 
     const vector<std::string>& vectorWeightsName = handleGenLumiInfo->weightNames();
-    int idx_isr_up = -1, idx_isr_down = -1, idx_fsr_up = -1, idx_fsr_down = -1;
+    if (!vectorWeightsName.empty()) {
+      int idx_isr_up = -1, idx_isr_down = -1, idx_fsr_up = -1, idx_fsr_down = -1;
 
-    for (std::size_t idx=0; idx < ps_weight_vec_size; idx++) {
-      const auto& weightName = vectorWeightsName[idx];
+      for (std::size_t idx=0; idx < ps_weight_vec_size; idx++) {
+        const auto& weightName = vectorWeightsName[idx];
 
-      if (weightName.find("isr:murfac=2.0") != std::string::npos) idx_isr_up = idx;
-      if (weightName.find("isr:murfac=0.5") != std::string::npos) idx_isr_down = idx;
-      if (weightName.find("fsr:murfac=2.0") != std::string::npos) idx_fsr_up = idx;
-      if (weightName.find("fsr:murfac=0.5") != std::string::npos) idx_fsr_down = idx;
-    }
+        if (weightName.find("isr:murfac=2.0") != std::string::npos) idx_isr_up = idx;
+        if (weightName.find("isr:murfac=0.5") != std::string::npos) idx_isr_down = idx;
+        if (weightName.find("fsr:murfac=2.0") != std::string::npos) idx_fsr_up = idx;
+        if (weightName.find("fsr:murfac=0.5") != std::string::npos) idx_fsr_down = idx;
+      }
 
-    // Order of weights - isr up and down then fsr up and down
-    if (idx_isr_up != -1 && idx_isr_down != -1 && idx_fsr_up != -1 && idx_fsr_down != -1) {
-      vectorPSWeightsIndex.push_back(idx_isr_up);
-      vectorPSWeightsIndex.push_back(idx_isr_down);
-      vectorPSWeightsIndex.push_back(idx_fsr_up);
-      vectorPSWeightsIndex.push_back(idx_fsr_down);
+      // Order of weights - isr up and down then fsr up and down
+      if (idx_isr_up != -1 && idx_isr_down != -1 && idx_fsr_up != -1 && idx_fsr_down != -1) {
+        vectorPSWeightsIndex.push_back(idx_isr_up);
+        vectorPSWeightsIndex.push_back(idx_isr_down);
+        vectorPSWeightsIndex.push_back(idx_fsr_up);
+        vectorPSWeightsIndex.push_back(idx_fsr_down);
+      }
     }
   }
 

@@ -183,23 +183,26 @@ void ConvertInput(fwlite::Event &event,
   if (firstEvent && handleGenLumiInfo.isValid()) {
 
     const vector<std::string>& vectorWeightsName = handleGenLumiInfo->weightNames();
-    int idx_isr_up = -1, idx_isr_down = -1, idx_fsr_up = -1, idx_fsr_down = -1;
 
-    for (std::size_t idx=0; idx < ps_weight_vec_size; idx++) {
-      const auto& weightName = vectorWeightsName[idx];
+    if (!vectorWeightsName.empty()) {
+      int idx_isr_up = -1, idx_isr_down = -1, idx_fsr_up = -1, idx_fsr_down = -1;
 
-      if (weightName.find("isr:murfac=2.0") != std::string::npos) idx_isr_up = idx;
-      if (weightName.find("isr:murfac=0.5") != std::string::npos) idx_isr_down = idx;
-      if (weightName.find("fsr:murfac=2.0") != std::string::npos) idx_fsr_up = idx;
-      if (weightName.find("fsr:murfac=0.5") != std::string::npos) idx_fsr_down = idx;
-    }
+      for (std::size_t idx=0; idx < ps_weight_vec_size; idx++) {
+        const auto& weightName = vectorWeightsName[idx];
 
-    // Order of weights - isr up and down then fsr up and down
-    if (idx_isr_up != -1 && idx_isr_down != -1 && idx_fsr_up != -1 && idx_fsr_down != -1) {
-      vectorPSWeightsIndex.push_back(idx_isr_up);
-      vectorPSWeightsIndex.push_back(idx_isr_down);
-      vectorPSWeightsIndex.push_back(idx_fsr_up);
-      vectorPSWeightsIndex.push_back(idx_fsr_down);
+        if (weightName.find("isr:murfac=2.0") != std::string::npos) idx_isr_up = idx;
+        if (weightName.find("isr:murfac=0.5") != std::string::npos) idx_isr_down = idx;
+        if (weightName.find("fsr:murfac=2.0") != std::string::npos) idx_fsr_up = idx;
+        if (weightName.find("fsr:murfac=0.5") != std::string::npos) idx_fsr_down = idx;
+      }
+
+      // Order of weights - isr up and down then fsr up and down
+      if (idx_isr_up != -1 && idx_isr_down != -1 && idx_fsr_up != -1 && idx_fsr_down != -1) {
+        vectorPSWeightsIndex.push_back(idx_isr_up);
+        vectorPSWeightsIndex.push_back(idx_isr_down);
+        vectorPSWeightsIndex.push_back(idx_fsr_up);
+        vectorPSWeightsIndex.push_back(idx_fsr_down);
+      }
     }
   }
 
@@ -238,9 +241,11 @@ void ConvertInput(fwlite::Event &event,
     if(particle.status() > 20 && particle.status() < 30) {
       // Dismiss if input is already no vertex smearing
       pv_x = (abs(particle.vx()) > no_smear_limit) ? particle.vx() : 0;
-      pv_y = (abs(particle.vy()) > no_smear_limit) ? particle.vx() : 0;
-      pv_z = (abs(particle.vz()) > no_smear_limit) ? particle.vx() : 0;
+      pv_y = (abs(particle.vy()) > no_smear_limit) ? particle.vy() : 0;
+      pv_z = (abs(particle.vz()) > no_smear_limit) ? particle.vz() : 0;
       //std::cout << "pv_x: " << pv_x << " from : " << particle.vx() << std::endl;
+      //std::cout << "pv_y: " << pv_y << " from : " << particle.vy() << std::endl;
+      //std::cout << "pv_z: " << pv_z << " from : " << particle.vz() << std::endl;
       break;
     }
   }
